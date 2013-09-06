@@ -19,43 +19,51 @@ object Users extends Controller with MongoController {
 
   def collection: JSONCollection = db.collection[JSONCollection]("users")
 
-  def list() = Action.async { implicit request =>
-    val usersFuture = collection.find(Json.obj()).cursor[User].toList
-    usersFuture.map { users =>
-      Ok(Json.toJson(users))
+  def list() = Action { implicit request =>
+    Async {
+      val usersFuture = collection.find(Json.obj()).cursor[User].toList
+      usersFuture.map { users =>
+        Ok(Json.toJson(users))
+      }
     }
   }
 
-  def edit(id: BSONObjectID) = Action.async { implicit request =>
-    val cursor = collection.find(Json.obj("_id" -> id)).cursor[User].headOption
-    cursor.map { userOption =>
-      userOption.map { user =>
-        Ok(Json.toJson(user))
-      } getOrElse {
-        NotFound(id.toString)
+  def edit(id: BSONObjectID) = Action { implicit request =>
+    Async {
+      val cursor = collection.find(Json.obj("_id" -> id)).cursor[User].headOption
+      cursor.map { userOption =>
+        userOption.map { user =>
+          Ok(Json.toJson(user))
+        } getOrElse {
+          NotFound(id.toString)
+        }
       }
     }
   }
 
   def insert() = save(BSONObjectID.generate)
 
-  def save(id: BSONObjectID) = Action.async(parse.json) { implicit request =>
+  def save(id: BSONObjectID) = Action(parse.json) { implicit request =>
     request.body.validate(updateObjectId(id) andThen User.reads).fold(
-      invalid = e => Future.successful(BadRequest(JsError.toFlatJson(e))),
+      invalid = e => BadRequest(JsError.toFlatJson(e)),
       valid = { user =>
-        collection.update(Json.obj("_id" -> id), user, upsert=true).map { newUser =>
-          Created(Json.toJson(user))
+        Async {
+          collection.update(Json.obj("_id" -> id), user, upsert=true).map { newUser =>
+            Created(Json.toJson(user))
+          }
         }
       }
     )
   }
 
-  def remove(id: BSONObjectID) = Action.async { implicit request =>
-    collection.remove(Json.obj("_id" -> id)).map { lastError =>
-      if (lastError.ok)
-        Ok
-      else
-        InternalServerError(lastError.toString)
+  def remove(id: BSONObjectID) = Action { implicit request =>
+    Async {
+      collection.remove(Json.obj("_id" -> id)).map { lastError =>
+        if (lastError.ok)
+          Ok
+        else
+          InternalServerError(lastError.toString)
+      }
     }
   }
 
