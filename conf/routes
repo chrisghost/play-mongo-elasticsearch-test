@@ -1,0 +1,20 @@
+#
+#   Resources
+#
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file                                                           controllers.Assets.at(path="/public", file)
+
+GET     /res/default/:file                                                      se.digiplant.res.ResAssets.at(file)
+GET     /res/default/:width/:height/crop/:file                                  se.digiplant.scalr.ScalrResAssets.crop(file, width: Int, height: Int)
+GET     /res/default/:width/:height/:file                                       se.digiplant.scalr.ScalrResAssets.at(file, width: Int, height: Int)
+
+GET    /api/user                                                                controllers.Users.list
+POST   /api/user                                                                controllers.Users.insert
+GET    /api/user/:id                                                            controllers.Users.edit(id: BSONObjectID)
+POST   /api/user/:id                                                            controllers.Users.save(id: BSONObjectID)
+DELETE /api/user/:id                                                            controllers.Users.remove(id: BSONObjectID)
+
+
+GET    /                                                                        controllers.Application.index(path = "")
+GET    /*path                                                                   controllers.Application.index(path)
